@@ -8,39 +8,42 @@ export const basicDemoData = {
   
   event: {
     celebrant: "Edana Ximena",
+    //Padres María de Jesús Gutiérrez y Andres Ramírez
     parents: {
-      father: "SANTOS SANCHEZ PULIDO",
-      mother: "NANCY R. COBA FLORES"
+      father: "Andres Ramírez",
+      mother: "Maria de Jesús Gutiérrez"
     },
+    //Padrino Ma. Asunción Ramirez y Juan Gutiérrez
     godparents: {
-      godfather: "",
-      godmother: "ANEL COBA FLORES"
+      godfather: "Juan Gutiérrez",
+      godmother: "Ma. Asunción Ramirez"
     },
     date: {
-      full: "Sábado 18 de Octubre 2025",
+      full: "Sábado 27 de Diciembre 2025",
       day: "Sábado",
-      date: "18 de Octubre 2025"
+      date: "27 de Diciembre 2025"
     },
+    //Misa a la 1pm parroquia Santa fe de Guadalupe, la Sauceda Guanajuato.
     ceremony: {
-      time: "17:00 hrs.",
-      venue: "Parroquia San José",
-      address: "Calle 3 Pte. 2, Área de los Pozos, 75010 San José Chiapa, Pue.",
+      time: "13:00 hrs.",
+      venue: "Parroquia Santa Fe de Guadalupe",
+      address: "GTO 67 31, 43, 36226 Yerbabuena, Gto.",
       type: "Misa de Acción de Gracias",
-      ubiLink: "https://maps.app.goo.gl/QxDwarXgZj6iQ3Ab8"
+      ubiLink: "https://maps.app.goo.gl/WfeVYukpQg3CWC2T8"
     },
     party: {
-      time: "18:30 hrs.",
-      venue: "Salón Social Finca de San José",
-      address: "Calle 8 Pte. 106, Barrio de Sta Cruz, 75010 De Santa Cruz, Pue.",
+      time: "14:00 hrs.",
+      venue: "Salón Texano",
+      address: "GTO 67, 36226 Yerbabuena, Gto.",
       type: "Recepción",
-      ubiLink: "https://maps.app.goo.gl/N6SUnMkGWecBS84j8"
+      ubiLink: "https://maps.app.goo.gl/qNFsbPPuwyCSMUim9"
     },
-    dressCode: "Formal",
+    dressCode: "Formal - Rosa solo la quinceañera",
     restrictions: "No Niños"
   },
 
   countdown: {
-    targetDate: "October 18, 2025 17:00:00",
+    targetDate: "December 27, 2025 17:00:00",
     backgroundImage: "/images/countdown-bg.jpg"
   },
 
@@ -65,16 +68,10 @@ export const basicDemoData = {
     message: "Mi mejor regalo es compartir contigo este gran día, si deseas obsequiarme algo, puedo sugerir las siguientes opciones:",
     options: [
       {
-        icon: "💳",
-        title: "Transferencia Bancaria",
-        description: "BBVA Bancomer",
-        details: "Cuenta: 1234567890\nCLABE: 012345678901234567\nA nombre de: Patricia Hernández López"
-      },
-      {
         icon: "🎁",
-        title: "Mesa de Regalos",
-        description: "Liverpool",
-        details: "Evento: XV años Isabella\nCódigo: 51234567"
+        title: "Regalo Sorpresa",
+        description: "¡Sorpréndeme con algo especial!",
+        details: "Mi mejor regalo es tu presencia."
       },
       {
         icon: "💰",
