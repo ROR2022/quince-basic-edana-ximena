@@ -1,0 +1,27 @@
+/* Critical styles to prevent FOUC (Flash of Unstyled Content) */
+:root {
+  --primary: 219 100% 45%;
+  --primary-foreground: 210 40% 98%;
+}
+
+/* Ensure primary color utilities work even before full CSS loads */
+.text-primary {
+  color: hsl(219, 100%, 45%) !important;
+}
+
+.bg-primary {
+  background-color: hsl(219, 100%, 45%) !important;
+}
+
+.border-primary {
+  border-color: hsl(219, 100%, 45%) !important;
+}
+
+/* Fallback for hover states */
+.hover\:bg-primary:hover {
+  background-color: hsl(219, 100%, 45%) !important;
+}
+
+.hover\:text-white:hover {
+  color: white !important;
+}

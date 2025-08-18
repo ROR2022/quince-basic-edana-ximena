@@ -1,0 +1,637 @@
+"use client"
+
+import React, { useState, useCallback } from 'react'
+import { 
+  Users, 
+  UserPlus, 
+  Download, 
+  Upload, 
+  Settings, 
+  RefreshCw,
+  BarChart3,
+  Table,
+  Filter,
+  Mail,
+  FileText,
+  ChevronDown,
+  ChevronRight
+} from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu'
+import { useGuestManagement } from '@/context/GuestManagementContext'
+import { useToast } from './AnimationsAndFeedback'
+import { GuestStats } from './GuestStats'
+import { GuestTable } from './GuestTable'
+import { GuestFilters } from './GuestFilters'
+import { type GuestFilters as GuestFiltersType, type Guest } from '@/types/guest'
+
+// Tipo para las secciones de administración
+type AdminSection = 
+  | 'dashboard' 
+  | 'guests' 
+  | 'invitations' 
+  | 'notifications' 
+  | 'preview' 
+  | 'attendance' 
+  | 'analytics'
+  | 'export'
+  | 'codes'
+  | 'reminders'
+
+interface GuestManagementProps {
+  className?: string
+  onNavigate?: (section: AdminSection) => void
+}
+
+export function GuestManagement({ className = "", onNavigate }: GuestManagementProps) {
+  const { 
+    guests, 
+    stats, 
+    loading, 
+    error,
+    // deleteGuest - disponible pero no usado en esta vista
+    deleteGuest: _deleteGuest,
+    loadDemoData,
+    clearAllData,
+    exportGuests,
+    importGuests,
+    resetToInitialState,
+    // bulkInvite - no usado actualmente
+    bulkInvite: _bulkInvite
+  } = useGuestManagement()
+  
+  const { success, error: showError, loading: showLoading, removeToast } = useToast()
+
+  // Estados locales
+  const [activeTab, setActiveTab] = useState('guests') // Cambiar a 'guests' por defecto
+  const [currentFilters, setCurrentFilters] = useState<GuestFiltersType>({})
+  const [showFilters, setShowFilters] = useState(true)
+
+  // Log para depuración
+  React.useEffect(() => {
+    console.log('📊 Current filters changed:', currentFilters)
+  }, [currentFilters])
+
+  // Manejar cambios en filtros
+  const handleFiltersChange = useCallback((filters: GuestFiltersType) => {
+    setCurrentFilters(filters)
+  }, [])
+
+  // Acciones del dashboard
+  const handleAddGuest = () => {
+    if (onNavigate) {
+      onNavigate('invitations')
+      success('Navegando...', 'Redirigiendo a agregar invitados')
+    } else {
+      showError('Error de navegación', 'No se puede navegar a la sección')
+    }
+  }
+
+  // Manejar clicks en tarjetas con filtros específicos
+  const handleCardClick = (filterType: 'all' | 'confirmed' | 'pending' | 'declined') => {
+    console.log('🔘 Card clicked:', filterType)
+    
+    // Cambiar a la pestaña de invitados
+    setActiveTab('guests')
+    
+    // Aplicar filtro específico según la tarjeta
+    let newFilters: GuestFiltersType = {}
+    
+    switch (filterType) {
+      case 'confirmed':
+        newFilters = { status: 'confirmed' }
+        setCurrentFilters(newFilters)
+        success('Filtro aplicado', 'Mostrando solo invitados confirmados')
+        break
+      case 'pending':
+        newFilters = { status: 'pending' }
+        setCurrentFilters(newFilters)
+        success('Filtro aplicado', 'Mostrando solo invitados pendientes')
+        break
+      case 'declined':
+        newFilters = { status: 'declined' }
+        setCurrentFilters(newFilters)
+        success('Filtro aplicado', 'Mostrando solo invitados que declinaron')
+        break
+      default:
+        newFilters = {}
+        setCurrentFilters(newFilters)
+        success('Navegando...', 'Mostrando todos los invitados')
+        break
+    }
+    
+    console.log('🔍 New filters set:', newFilters)
+    
+    // Asegurar que los filtros estén visibles
+    setShowFilters(true)
+  }
+
+  const handleBulkInvite = () => {
+    if (onNavigate) {
+      onNavigate('invitations')
+      success('Navegando...', 'Redirigiendo a invitación masiva')
+    } else {
+      showError('Error de navegación', 'No se puede navegar a la sección')
+    }
+  }
+
+  const handleExport = async (format: 'csv' | 'excel' | 'pdf') => {
+    const loadingToast = showLoading(`Exportando datos en formato ${format.toUpperCase()}...`, 'Preparando archivo')
+    
+    try {
+      const exportData = {
+        format: format,
+        fields: ['name', 'phone', 'email', 'status', 'companions', 'dateInvited', 'dateResponded'] as Array<keyof Guest>,
+        includeStats: true,
+        filters: currentFilters
+      }
+      
+      const blob = await exportGuests(exportData)
+      
+      // Crear URL y descargar archivo
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      const filename = `invitados_${new Date().toISOString().split('T')[0]}`
+      a.download = `${filename}.${format}`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      
+      success('¡Exportación exitosa!', `Archivo ${format.toUpperCase()} descargado correctamente`)
+    } catch (_err) {
+      showError('Error al exportar', `No se pudo exportar en formato ${format.toUpperCase()}`)
+    } finally {
+      removeToast(loadingToast)
+    }
+  }
+
+  const handleImport = () => {
+    // Crear input file oculto
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.csv,.xlsx,.xls'
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (!file) return
+      
+      const loadingToast = showLoading('Importando invitados...', 'Procesando archivo')
+      
+      try {
+        const result = await importGuests(file)
+        success(
+          '¡Importación exitosa!', 
+          `${result.successCount} invitados importados correctamente`
+        )
+      } catch (_err) {
+        showError('Error al importar', 'No se pudo procesar el archivo')
+      } finally {
+        removeToast(loadingToast)
+      }
+    }
+    input.click()
+  }
+
+  const handleRefresh = () => {
+    resetToInitialState()
+    success('Datos actualizados', 'Se han refrescado los datos de invitados')
+  }
+
+  // Contar filtros activos
+  const activeFiltersCount = Object.values(currentFilters).filter(Boolean).length
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center space-x-3">
+          <RefreshCw className="h-6 w-6 animate-spin text-blue-500" />
+          <span className="text-lg text-gray-600">Cargando gestión de invitados...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card className="max-w-md mx-auto">
+        <CardContent className="pt-6">
+          <div className="text-center">
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Users className="h-6 w-6 text-red-600" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Error al cargar datos
+            </h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <Button onClick={handleRefresh}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Reintentar
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <div className={`space-y-6 ${className}`}>
+      {/* Header del dashboard */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Gestión de Invitados
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Administra tus invitados, ve la lista completa y gestiona confirmaciones
+          </p>
+        </div>
+
+        {/* Acciones principales */}
+        <div className="flex items-center space-x-3">
+          {/* Botón agregar invitado */}
+          <Button onClick={handleAddGuest} className="flex items-center space-x-2">
+            <UserPlus className="h-4 w-4" />
+            <span>Agregar Invitado</span>
+          </Button>
+
+          {/* Menú de acciones */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Settings className="h-4 w-4 mr-2" />
+                Acciones
+                <ChevronDown className="h-4 w-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={handleBulkInvite}>
+                <Mail className="mr-2 h-4 w-4" />
+                Invitación masiva
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleImport}>
+                <Upload className="mr-2 h-4 w-4" />
+                Importar invitados
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleExport('csv')}>
+                <Download className="mr-2 h-4 w-4" />
+                Exportar CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('excel')}>
+                <Download className="mr-2 h-4 w-4" />
+                Exportar Excel
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                <FileText className="mr-2 h-4 w-4" />
+                Exportar PDF
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={loadDemoData}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Cargar datos demo
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={clearAllData}
+                className="text-red-600 focus:text-red-600"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Limpiar todos los datos
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* Resumen rápido - clickeable para ir a la tabla */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card 
+          className="bg-gradient-to-r from-blue-50 to-blue-100 cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-200 active:scale-100"
+          onClick={() => handleCardClick('all')}
+        >
+          <CardContent className="pt-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-500 rounded-lg">
+                <Users className="h-6 w-6 text-white" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-blue-800">
+                  Total Invitados
+                </p>
+                <p className="text-2xl font-bold text-blue-900">
+                  {stats.total}
+                </p>
+                <p className="text-xs text-blue-600 mt-1">
+                  👆 Click para ver todos
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="bg-gradient-to-r from-green-50 to-green-100 cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-200 active:scale-100"
+          onClick={() => handleCardClick('confirmed')}
+        >
+          <CardContent className="pt-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-500 rounded-lg">
+                <Users className="h-6 w-6 text-white" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-green-800">
+                  Confirmados
+                </p>
+                <p className="text-2xl font-bold text-green-900">
+                  {stats.confirmed}
+                </p>
+                <p className="text-xs text-green-600 mt-1">
+                  👆 Click para filtrar
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="bg-gradient-to-r from-yellow-50 to-yellow-100 cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-200 active:scale-100"
+          onClick={() => handleCardClick('pending')}
+        >
+          <CardContent className="pt-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-yellow-500 rounded-lg">
+                <Users className="h-6 w-6 text-white" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-yellow-800">
+                  Pendientes
+                </p>
+                <p className="text-2xl font-bold text-yellow-900">
+                  {stats.pending}
+                </p>
+                <p className="text-xs text-yellow-600 mt-1">
+                  👆 Click para filtrar
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="bg-gradient-to-r from-red-50 to-red-100 cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-200 active:scale-100"
+          onClick={() => handleCardClick('declined')}
+        >
+          <CardContent className="pt-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-red-500 rounded-lg">
+                <Users className="h-6 w-6 text-white" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-red-800">
+                  Declinados
+                </p>
+                <p className="text-2xl font-bold text-red-900">
+                  {stats.declined}
+                </p>
+                <p className="text-xs text-red-600 mt-1">
+                  👆 Click para filtrar
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Navegación por pestañas */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <div className="flex items-center justify-between">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
+            <TabsTrigger value="overview" className="flex items-center space-x-2">
+              <BarChart3 className="h-4 w-4" />
+              <span>Resumen</span>
+            </TabsTrigger>
+            <TabsTrigger value="guests" className="flex items-center space-x-2">
+              <Table className="h-4 w-4" />
+              <span>Lista de Invitados</span>
+              {guests.length > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {guests.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center space-x-2">
+              <BarChart3 className="h-4 w-4" />
+              <span>Análisis</span>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Toggle de filtros para la pestaña de invitados */}
+          {activeTab === 'guests' && (
+            <div className="flex items-center space-x-3">
+              {/* Indicador de filtro activo */}
+              {currentFilters.status && (
+                <div className="flex items-center space-x-2">
+                  <Badge variant="outline" className="bg-blue-50">
+                    Filtro: {currentFilters.status === 'confirmed' ? 'Confirmados' : 
+                            currentFilters.status === 'pending' ? 'Pendientes' : 
+                            currentFilters.status === 'declined' ? 'Declinados' : 
+                            'Todos'}
+                  </Badge>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      setCurrentFilters({})
+                      success('Filtros limpiados', 'Mostrando todos los invitados')
+                    }}
+                    className="h-6 w-6 p-0"
+                  >
+                    ✕
+                  </Button>
+                </div>
+              )}
+              
+              <Button 
+                variant="outline" 
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center space-x-2"
+              >
+                <Filter className="h-4 w-4" />
+                <span>Filtros</span>
+                {activeFiltersCount > 0 && (
+                  <Badge variant="secondary">
+                    {activeFiltersCount}
+                  </Badge>
+                )}
+                {showFilters ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <TabsContent value="overview" className="space-y-6">
+          <GuestStats />
+        </TabsContent>
+
+        <TabsContent value="guests" className="space-y-6">
+          {guests.length === 0 ? (
+            <Card className="border-dashed border-2 border-gray-300">
+              <CardContent className="pt-6">
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    No hay invitados aún
+                  </h3>
+                  <p className="text-gray-600 mb-6">
+                    Comienza agregando invitados para ver la tabla completa con todos los detalles
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                    <Button onClick={handleAddGuest} className="flex items-center space-x-2">
+                      <UserPlus className="h-4 w-4" />
+                      <span>Agregar Primer Invitado</span>
+                    </Button>
+                    <span className="text-gray-400">o</span>
+                    <Button 
+                      onClick={loadDemoData} 
+                      variant="outline"
+                      className="flex items-center space-x-2"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      <span>Cargar Datos de Demo</span>
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-4">
+                    💡 Tip: Usa los datos de demo para probar la funcionalidad de las tarjetas
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {showFilters && (
+                <GuestFilters 
+                  onFiltersChange={handleFiltersChange}
+                  showAdvanced={true}
+                />
+              )}
+              <GuestTable 
+                filters={currentFilters}
+                showPagination={true}
+                pageSize={10}
+              />
+            </>
+          )}
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Análisis de respuestas */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Análisis de Respuestas</CardTitle>
+                <CardDescription>
+                  Distribución de estados de confirmación
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-green-600">Confirmados</span>
+                    <span className="font-semibold">{stats.confirmed}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-yellow-600">Pendientes</span>
+                    <span className="font-semibold">{stats.pending}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-red-600">Declinados</span>
+                    <span className="font-semibold">{stats.declined}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Estadísticas de tiempo */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Estadísticas de Tiempo</CardTitle>
+                <CardDescription>
+                  Métricas de respuesta y participación
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span>Total de invitados</span>
+                    <span className="font-semibold">{stats.total}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Tasa de respuesta</span>
+                    <span className="font-semibold">
+                      {stats.total > 0 ? Math.round(((stats.confirmed + stats.declined) / stats.total) * 100) : 0}%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Total confirmados</span>
+                    <span className="font-semibold">{stats.totalConfirmedPeople}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Footer con información del demo */}
+      <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200">
+        <CardContent className="pt-6">
+          <div className="flex items-start space-x-4">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-indigo-500 rounded-full flex items-center justify-center">
+                <BarChart3 className="h-6 w-6 text-white" />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-indigo-900 mb-2">
+                💡 Gestión Avanzada de Invitados
+              </h3>
+              <p className="text-indigo-800 mb-3">
+                Esta sección te permite gestionar completamente tus invitados: agregar individualmente o en lote, 
+                exportar listas, filtrar por estado, y seguir confirmaciones en tiempo real.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">
+                  Filtros avanzados
+                </Badge>
+                <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">
+                  Exportación múltiple
+                </Badge>
+                <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">
+                  Importación CSV
+                </Badge>
+                <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">
+                  Gestión en tiempo real
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+export default GuestManagement
