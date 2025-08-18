@@ -7,9 +7,9 @@ import { ThemeProvider } from '@/components/theme/ThemeProvider'
 import { StylesProvider } from '@/components/StylesProvider'
 
 export const metadata: Metadata = {
-  title: 'Quince Basic Arianna Karina',
-  description: 'Quince Basic Arianna Karina',
-  generator: 'Quince Basic Arianna Karina',
+  title: 'Quince Basic Edana Ximena',
+  description: 'Quince Basic Edana Ximena',
+  generator: 'Quince Basic Edana Ximena',
   // Next.js 15 detecta automáticamente favicon.ico, icon.png y apple-icon.png en /app
 }
 
