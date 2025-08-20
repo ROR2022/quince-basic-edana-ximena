@@ -59,7 +59,7 @@ export function BasicEventDetails() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-4 gap-8 mt-12">
+        <div className="grid md:grid-cols-4 gap-8 mt-12 text-black">
           <div className="flex flex-col items-center">
             <Calendar className="w-12 h-12 text-primary mb-4" />
             <h3 className="text-xl font-medium mb-2">¿Cuándo?</h3>
