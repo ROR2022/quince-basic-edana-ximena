@@ -7,7 +7,7 @@ import { EventInfo, RelationOption } from '../types/invitation.types';
 export const ADMIN_PASSWORD = "aurora1234";
 
 export const EVENT_INFO: EventInfo = {
-  quinceaneraName: "Edana Jimena",
+  quinceaneraName: "Edana Ximena",
   date: "Sábado 27 de Diciembre 2025",
   time: "1:00 PM",
   venue: "Parroquia Santa Fe de Guadalupe",
