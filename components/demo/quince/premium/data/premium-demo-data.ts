@@ -26,7 +26,7 @@ export const premiumDemoData = {
   // Configuración de música premium
   music: {
     title: "Música Especial",
-    track: "/music/romantic-wedding1.mp3",
+    track: "/music/noCrezcas.mp3",
     autoplay: false, // Por UX, mejor no autoplay automático
     loop: true,
     description: "Música personalizada para tu evento"

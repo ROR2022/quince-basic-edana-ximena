@@ -27,19 +27,19 @@ export const basicDemoData = {
     ceremony: {
       time: "13:00 hrs.",
       venue: "Parroquia Santa Fe de Guadalupe",
-      address: "GTO 67 31, 43, 36226 Yerbabuena, Gto.",
+      address: "Santa fe de Guadalupe, la Sauceda Guanajuato.",
       type: "Misa de Acción de Gracias",
       ubiLink: "https://maps.app.goo.gl/WfeVYukpQg3CWC2T8"
     },
     party: {
       time: "14:00 hrs.",
       venue: "Salón Texano",
-      address: "GTO 67, 36226 Yerbabuena, Gto.",
+      address: "Santa fe de Guadalupe, la Sauceda Guanajuato.",
       type: "Recepción",
       ubiLink: "https://maps.app.goo.gl/qNFsbPPuwyCSMUim9"
     },
     dressCode: "Formal - Rosa solo la quinceañera",
-    restrictions: "No Niños"
+    restrictions: ""
   },
 
   countdown: {
@@ -49,8 +49,8 @@ export const basicDemoData = {
 
   attendance: {
     title: "CONFIRMACIÓN DE ASISTENCIA",
-    message: "Respetuosamente <No Niños>",
-    subtitle: "Espero que no sea impedimento para que ustedes puedan asistir a mi fiesta.",
+    message: "Respetuosamente",
+    subtitle: "Confirmar antes del evento.",
     fields: {
       name: "Nombre completo",
       response: "¿Podrás acompañarme?",
