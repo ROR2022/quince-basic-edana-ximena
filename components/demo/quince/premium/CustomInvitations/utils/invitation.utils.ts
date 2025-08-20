@@ -8,12 +8,31 @@ import { EVENT_INFO, VALIDATION_MESSAGES, PHONE_CONFIG } from '../constants/invi
 /**
  * Formatea un número de teléfono mexicano con espacios
  * @param value - Número de teléfono sin formato
+ * @param previousValue - Valor anterior para detectar si está borrando
  * @returns Número formateado (XXX XXX XXXX)
  */
-export const formatMexicanPhone = (value: string): string => {
+export const formatMexicanPhone = (value: string, previousValue?: string): string => {
+  // Remover todo lo que no sean números
   const numbers = value.replace(/\D/g, "");
+  
+  // Si el valor actual es más corto que el anterior, el usuario está borrando
+  const isDeleting = previousValue && value.length < previousValue.length;
+  
+  // Limitar a 10 dígitos máximo
   const limited = numbers.slice(0, PHONE_CONFIG.DIGITS_REQUIRED);
   
+  // Si está borrando y el cursor está en un espacio, permitir que se borre
+  if (isDeleting) {
+    // Simplemente formatear los números que quedan
+    if (limited.length >= 6) {
+      return `${limited.slice(0, 3)} ${limited.slice(3, 6)} ${limited.slice(6)}`;
+    } else if (limited.length >= 3) {
+      return `${limited.slice(0, 3)} ${limited.slice(3)}`;
+    }
+    return limited;
+  }
+  
+  // Formatear normalmente cuando está escribiendo
   if (limited.length >= 6) {
     return `${limited.slice(0, 3)} ${limited.slice(3, 6)} ${limited.slice(6)}`;
   } else if (limited.length >= 3) {

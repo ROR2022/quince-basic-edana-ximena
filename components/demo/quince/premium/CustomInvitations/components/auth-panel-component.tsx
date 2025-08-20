@@ -64,7 +64,7 @@ export const AuthPanel: React.FC<AuthPanelProps> = ({
                 value={password}
                 onChange={(e) => onUpdateAuth({ password: e.target.value })}
                 placeholder="Contraseña"
-                className={`w-full px-3 py-2 pr-10 border ${
+                className={`w-full px-3 text-black py-2 pr-10 border ${
                   authError ? "border-red-300 focus:ring-red-400" : "border-fuchsia-200 focus:ring-fuchsia-400"
                 } rounded-lg text-sm focus:ring-2 focus:border-transparent transition-colors`}
                 required

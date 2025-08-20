@@ -23,6 +23,41 @@ export const InvitationForm: React.FC<InvitationFormProps> = ({
   const isPhoneValid = formData.whatsappNumber.length === 0 || 
     formData.whatsappNumber.replace(/\D/g, "").length === PHONE_CONFIG.DIGITS_REQUIRED;
 
+  // Manejar el cambio del número de teléfono
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    const currentValue = formData.whatsappNumber;
+    
+    // Pasar el valor anterior para detectar si está borrando
+    const formattedValue = formatMexicanPhone(newValue, currentValue);
+    onUpdateFormData("whatsappNumber", formattedValue);
+  };
+
+  // Manejar teclas especiales como backspace
+  const handlePhoneKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const target = e.target as HTMLInputElement;
+    const cursorPosition = target.selectionStart || 0;
+    const currentValue = formData.whatsappNumber;
+    
+    // Si presiona backspace y el cursor está en un espacio, mover el cursor
+    if (e.key === 'Backspace' && cursorPosition > 0) {
+      const charAtCursor = currentValue[cursorPosition - 1];
+      
+      // Si el carácter anterior es un espacio, eliminarlo también
+      if (charAtCursor === ' ') {
+        e.preventDefault();
+        const newValue = currentValue.slice(0, cursorPosition - 2) + currentValue.slice(cursorPosition);
+        const formattedValue = formatMexicanPhone(newValue, currentValue);
+        onUpdateFormData("whatsappNumber", formattedValue);
+        
+        // Posicionar el cursor correctamente después del formateo
+        setTimeout(() => {
+          target.setSelectionRange(cursorPosition - 2, cursorPosition - 2);
+        }, 0);
+      }
+    }
+  };
+
   return (
     <div className="grid md:grid-cols-2 gap-6">
       {/* Columna izquierda - Datos básicos */}
@@ -41,7 +76,7 @@ export const InvitationForm: React.FC<InvitationFormProps> = ({
             value={formData.guestName}
             onChange={(e) => onUpdateFormData("guestName", e.target.value)}
             placeholder="Ej: Valeria Martínez"
-            className={`w-full px-4 py-3 border rounded-lg ${CSS_CLASSES.BORDER_FOCUS}`}
+            className={`w-full text-black px-4 py-3 border rounded-lg ${CSS_CLASSES.BORDER_FOCUS}`}
             required
             maxLength={50}
             autoComplete="name"
@@ -63,7 +98,7 @@ export const InvitationForm: React.FC<InvitationFormProps> = ({
             id="guestRelation"
             value={formData.guestRelation}
             onChange={(e) => onUpdateFormData("guestRelation", e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg ${CSS_CLASSES.BORDER_FOCUS}`}
+            className={`w-full text-black px-4 py-3 border rounded-lg ${CSS_CLASSES.BORDER_FOCUS}`}
           >
             {RELATION_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -85,7 +120,7 @@ export const InvitationForm: React.FC<InvitationFormProps> = ({
             id="numberOfGuests"
             value={formData.numberOfGuests}
             onChange={(e) => onUpdateFormData("numberOfGuests", e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg ${CSS_CLASSES.BORDER_FOCUS}`}
+            className={`w-full text-black px-4 py-3 border rounded-lg ${CSS_CLASSES.BORDER_FOCUS}`}
             required
           >
             <option value="">Selecciona número de invitados</option>
@@ -113,10 +148,11 @@ export const InvitationForm: React.FC<InvitationFormProps> = ({
               id="whatsappNumber"
               type="tel"
               value={formData.whatsappNumber}
-              onChange={(e) => onUpdateFormData("whatsappNumber", formatMexicanPhone(e.target.value))}
+              onChange={handlePhoneChange}
+              onKeyDown={handlePhoneKeyDown}
               placeholder={PHONE_CONFIG.PLACEHOLDER}
               maxLength={PHONE_CONFIG.MAX_LENGTH}
-              className={`w-full pl-16 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent ${
+              className={`w-full text-black pl-16 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent ${
                 isPhoneValid 
                   ? CSS_CLASSES.BORDER_FOCUS.replace('border-fuchsia-200', 'border-fuchsia-200')
                   : CSS_CLASSES.BORDER_ERROR
@@ -159,7 +195,7 @@ export const InvitationForm: React.FC<InvitationFormProps> = ({
             onChange={(e) => onUpdateFormData("personalMessage", e.target.value)}
             placeholder="Escribe un mensaje personalizado para el invitado..."
             rows={4}
-            className={`w-full px-4 py-3 border rounded-lg resize-none ${CSS_CLASSES.BORDER_FOCUS}`}
+            className={`w-full text-black px-4 py-3 border rounded-lg resize-none ${CSS_CLASSES.BORDER_FOCUS}`}
             required
             maxLength={500}
           />
@@ -179,7 +215,7 @@ export const InvitationForm: React.FC<InvitationFormProps> = ({
                 key={index}
                 type="button"
                 onClick={() => onUpdateFormData("personalMessage", message)}
-                className="w-full text-left p-3 text-sm bg-fuchsia-50 hover:bg-fuchsia-100 border border-fuchsia-200 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-fuchsia-400"
+                className="w-full text-slate-700 text-left p-3 text-sm bg-fuchsia-50 hover:bg-fuchsia-100 border border-fuchsia-200 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-fuchsia-400"
                 title="Hacer clic para usar este mensaje"
               >
                 <div className="line-clamp-2">
